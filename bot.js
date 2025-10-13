@@ -1,4 +1,6 @@
 require('dotenv').config();
+const http = require("http");
+const PORT = process.env.PORT || 3000;
 const TelegramBot = require('node-telegram-bot-api');
 const mongoose = require('mongoose');
 const schedule = require('node-schedule');
@@ -332,4 +334,15 @@ process.on('SIGINT', async () => {
   console.log('\n🛑 Arrêt du bot...');
   await mongoose.connection.close();
   process.exit(0);
+});
+
+
+
+//keep alive 
+
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Bot actif ✅");
+}).listen(PORT, () => {
+  console.log("🌍 Serveur Keep-Alive sur le port " + PORT);
 });
