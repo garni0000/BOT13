@@ -71,7 +71,12 @@ Voir le fichier `.env.example` pour la liste complète. Principales variables :
 - `ADMIN_USERNAME` : Username Telegram de l'admin
 
 **Base de données :**
-- `MONGODB_URI` : URI de connexion MongoDB
+- **Option 1** : `MONGODB_URI` - URI complète de connexion MongoDB
+- **Option 2** : Variables séparées pour plus de flexibilité :
+  - `MONGODB_USER` : Nom d'utilisateur MongoDB
+  - `MONGODB_PASSWORD` : Mot de passe MongoDB
+  - `MONGODB_CLUSTER` : Adresse du cluster (ex: cluster0.xxxxx.mongodb.net)
+  - `MONGODB_DATABASE` : Nom de la base de données (par défaut: telegram-bot)
 
 **Vidéos :**
 - `VIDEO_START` : Vidéo de démarrage

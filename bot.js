@@ -8,7 +8,15 @@ const User = require('./models/User');
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
-mongoose.connect(process.env.MONGODB_URI)
+// Construire l'URI MongoDB
+let mongoUri = process.env.MONGODB_URI;
+if (!mongoUri && process.env.MONGODB_USER && process.env.MONGODB_PASSWORD && process.env.MONGODB_CLUSTER) {
+  const dbName = process.env.MONGODB_DATABASE || 'telegram-bot';
+  mongoUri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_CLUSTER}/${dbName}?retryWrites=true&w=majority`;
+  console.log(`📝 URI MongoDB construite pour la base: ${dbName}`);
+}
+
+mongoose.connect(mongoUri)
   .then(() => console.log('✅ Connecté à MongoDB'))
   .catch(err => console.error('❌ Erreur MongoDB:', err));
 
