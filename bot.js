@@ -95,7 +95,14 @@ bot.onText(/\/start/, async (msg) => {
 
     await sleep(30000);
 
-    await bot.sendMessage(chatId, "Du coup, voulez-vous gagner avec nous ?? 💰");
+    await bot.sendMessage(chatId, "Du coup, voulez-vous gagner avec nous ?? 💰", {
+      reply_markup: {
+        keyboard: [
+          [{ text: '🔓 Débloquer mon accès au VIP' }]
+        ],
+        resize_keyboard: true
+      }
+    });
     console.log(`💬 Message question envoyé à ${firstName}`);
 
     user.currentStage = 'sent_question';
@@ -118,6 +125,57 @@ bot.on('message', async (msg) => {
   try {
     const user = await User.findOne({ chatId });
     if (!user) return;
+
+    if (text === '🔓 Débloquer mon accès au VIP') {
+      await bot.sendMessage(chatId, "Veuillez rejoindre les canaux pour avoir ton accès 🔐", {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'VIP', url: process.env.CHANNEL_VIP || 'https://t.me/+tPrtqmEX7otiMmM0' },
+              { text: 'Canal 1', url: process.env.CHANNEL_1 || 'https://t.me/channel1' }
+            ],
+            [
+              { text: 'Canal 2', url: process.env.CHANNEL_2 || 'https://t.me/channel2' },
+              { text: 'Canal 3', url: process.env.CHANNEL_3 || 'https://t.me/channel3' }
+            ],
+            [
+              { text: 'Canal 4', url: process.env.CHANNEL_4 || 'https://t.me/channel4' }
+            ],
+            [
+              { text: '✅ Check', callback_data: 'check_channels' }
+            ]
+          ]
+        }
+      });
+      console.log(`🔓 Demande de déblocage VIP de ${user.firstName}`);
+      return;
+    }
+
+    if (text === '🎯 Accéder au hack') {
+      if (!user.channelsJoined) {
+        await bot.sendMessage(chatId, "❌ Vous devez d'abord rejoindre tous les canaux et cliquer sur Check !");
+        return;
+      }
+
+      await bot.sendMessage(chatId, "Voici vos bots 🤖", {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '🍎 Apple F', url: process.env.BOT_APPLE_F || 'https://t.me/applefbot' },
+              { text: '🎮 Kami', url: process.env.BOT_KAMI || 'https://t.me/kamibot' }
+            ],
+            [
+              { text: '💥 Crash', url: process.env.BOT_CRASH || 'https://t.me/crashbot' }
+            ],
+            [
+              { text: '💬 Support', url: `https://t.me/${process.env.ADMIN_USERNAME || 'juzzpp'}` }
+            ]
+          ]
+        }
+      });
+      console.log(`🎯 Accès au hack fourni à ${user.firstName}`);
+      return;
+    }
 
     if (user.currentStage === 'followup_3') {
       if (isPositiveResponse(text) && !user.hasResponded) {
@@ -166,6 +224,43 @@ bot.on('message', async (msg) => {
     }
   } catch (error) {
     console.error('❌ Erreur traitement message:', error);
+  }
+});
+
+bot.on('callback_query', async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
+  const firstName = callbackQuery.from.first_name || 'ami';
+
+  try {
+    if (data === 'check_channels') {
+      const user = await User.findOne({ chatId });
+      if (!user) return;
+
+      user.channelsJoined = true;
+      user.vipUnlocked = true;
+      await user.save();
+
+      await bot.answerCallbackQuery(callbackQuery.id, {
+        text: '✅ Vérification réussie!',
+        show_alert: true
+      });
+
+      await bot.sendMessage(chatId, "✅ Parfait ! Vous avez maintenant accès au VIP ! 🎉", {
+        reply_markup: {
+          keyboard: [
+            [{ text: '🔓 Débloquer mon accès au VIP' }],
+            [{ text: '🎯 Accéder au hack' }]
+          ],
+          resize_keyboard: true
+        }
+      });
+      
+      console.log(`✅ ${firstName} a vérifié les canaux`);
+      await sendAdminNotification(`✅ ${firstName} (@${user.username || 'pas de username'}) a débloqué l'accès VIP!`);
+    }
+  } catch (error) {
+    console.error('❌ Erreur callback query:', error);
   }
 });
 

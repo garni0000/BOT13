@@ -45,6 +45,14 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  vipUnlocked: {
+    type: Boolean,
+    default: false
+  },
+  channelsJoined: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
