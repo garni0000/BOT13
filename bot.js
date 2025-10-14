@@ -237,30 +237,71 @@ bot.on('callback_query', async (callbackQuery) => {
       const user = await User.findOne({ chatId });
       if (!user) return;
 
-      user.channelsJoined = true;
-      user.vipUnlocked = true;
-      await user.save();
+      const channelIds = [
+        process.env.CHANNEL_VIP_ID,
+        process.env.CHANNEL_1_ID,
+        process.env.CHANNEL_2_ID,
+        process.env.CHANNEL_3_ID,
+        process.env.CHANNEL_4_ID
+      ].filter(id => id);
 
-      await bot.answerCallbackQuery(callbackQuery.id, {
-        text: '✅ Vérification réussie!',
-        show_alert: true
-      });
+      let allJoined = true;
+      let notJoinedChannels = [];
 
-      await bot.sendMessage(chatId, "✅ Parfait ! Vous avez maintenant accès au VIP ! 🎉", {
-        reply_markup: {
-          keyboard: [
-            [{ text: '🔓 Débloquer mon accès au VIP' }],
-            [{ text: '🎯 Accéder au hack' }]
-          ],
-          resize_keyboard: true
+      if (channelIds.length > 0) {
+        for (const channelId of channelIds) {
+          try {
+            const member = await bot.getChatMember(channelId, chatId);
+            if (!['member', 'administrator', 'creator'].includes(member.status)) {
+              allJoined = false;
+              notJoinedChannels.push(channelId);
+            }
+          } catch (error) {
+            console.log(`⚠️ Impossible de vérifier le canal ${channelId}: ${error.message}`);
+            allJoined = false;
+            notJoinedChannels.push(channelId);
+          }
         }
-      });
-      
-      console.log(`✅ ${firstName} a vérifié les canaux`);
-      await sendAdminNotification(`✅ ${firstName} (@${user.username || 'pas de username'}) a débloqué l'accès VIP!`);
+      } else {
+        allJoined = true;
+      }
+
+      if (allJoined) {
+        user.channelsJoined = true;
+        user.vipUnlocked = true;
+        await user.save();
+
+        await bot.answerCallbackQuery(callbackQuery.id, {
+          text: '✅ Vérification réussie!',
+          show_alert: true
+        });
+
+        await bot.sendMessage(chatId, "✅ Parfait ! Vous avez maintenant accès au VIP ! 🎉", {
+          reply_markup: {
+            keyboard: [
+              [{ text: '🔓 Débloquer mon accès au VIP' }],
+              [{ text: '🎯 Accéder au hack' }]
+            ],
+            resize_keyboard: true
+          }
+        });
+        
+        console.log(`✅ ${firstName} a vérifié les canaux`);
+        await sendAdminNotification(`✅ ${firstName} (@${user.username || 'pas de username'}) a débloqué l'accès VIP!`);
+      } else {
+        await bot.answerCallbackQuery(callbackQuery.id, {
+          text: '❌ Vous devez rejoindre tous les canaux avant de vérifier!',
+          show_alert: true
+        });
+        console.log(`❌ ${firstName} n'a pas rejoint tous les canaux`);
+      }
     }
   } catch (error) {
     console.error('❌ Erreur callback query:', error);
+    await bot.answerCallbackQuery(callbackQuery.id, {
+      text: '❌ Erreur lors de la vérification. Réessayez plus tard.',
+      show_alert: true
+    }).catch(err => console.error('❌ Erreur answerCallbackQuery:', err));
   }
 });
 
